@@ -4,19 +4,29 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	flag "github.com/spf13/pflag"
 	"io"
 	"os"
+	"time"
 )
 
-var fileName string
-var file File
+var (
+	fileName      string
+	file          File
+	fileIsChanged prometheus.Gauge
+)
 
-const MAXFILELENGTH = 1024 * 1024 * 1024
-const OFFSET = 64
+const (
+	MAXFILELENGTH = 1024 * 1024 * 1024
+	OFFSET        = 64
+	TICK          = 60
+)
 
 func init() {
 	flag.StringVarP(&fileName, "file-name", "f", "", "specify file name")
+
 }
 
 type File struct {
@@ -99,7 +109,26 @@ func (f *File) isFileChange() bool {
 	}
 }
 
-func Do() bool {
+func Do() {
+	if fileName == "" {
+		fmt.Println("Use -f to specify a file")
+		os.Exit(1)
+	}
 	file.name = fileName
-	return file.isFileChange()
+	fileIsChanged = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "file_change_detect",
+		Help: fmt.Sprintf("The status code of file [%s] change events. change 1, keep 0", fileName),
+	})
+	go func() {
+		c := time.Tick(TICK * time.Second)
+		for range c {
+			status := file.isFileChange()
+			if status {
+				fileIsChanged.Set(1)
+			} else {
+				fileIsChanged.Set(0)
+			}
+		}
+	}()
+
 }
