@@ -12,8 +12,7 @@ import (
 var fileName string
 var file File
 
-//const MAXFILELENGTH = 1024 * 1024 * 1024
-const MAXFILELENGTH = 1
+const MAXFILELENGTH = 1024 * 1024 * 1024
 const OFFSET = 64
 
 func init() {
