@@ -13,3 +13,10 @@ func TestFileSize(T *testing.T) {
 	}
 	fmt.Println(stat.Size())
 }
+
+func TestReadAt(T *testing.T) {
+	file, _ := os.Open("README.md")
+	buf := make([]byte, 100)
+	file.ReadAt(buf, 1)
+	fmt.Printf("%s", buf)
+}
